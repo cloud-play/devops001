@@ -1,0 +1,83 @@
+pipeline {
+    agent any
+
+    tools {
+        // Must match the name in Jenkins 'Global Tool Configuration'
+        maven 'maven-3' 
+    }
+
+    environment {
+        // Change this path to the actual location you found on your VM
+        TOMCAT_PATH = '/opt/tomcat/webapps' 
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/cloud-play/devops001.git'
+            }
+        }
+
+        stage('Compile & PMD') {
+            steps {
+                // Runs the analysis and generates reports
+                sh 'mvn clean compile pmd:pmd'
+            }
+        }
+
+        stage('Trivy FS Scan') {
+            steps {
+                // Scans the source code for vulnerabilities and saves a report
+                sh 'trivy fs . > trivy-fs-report.txt'
+                // Optional: display results in console
+                sh 'cat trivy-fs-report.txt'
+            }
+        }
+
+        stage('Unit Test & Coverage') {
+            steps {
+                // 'verify' handles surefire tests and jacoco reports
+                sh 'mvn verify'
+            }
+            post {
+                always {
+                    // Publishes the test results to the Jenkins UI dashboard
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                // 'SonarQube-Server' must match the name in Manage Jenkins > System
+                withSonarQubeEnv('SonarQube-Server') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                // Generate the .war file
+                sh 'mvn package -DskipTests'
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                // Copies the generated WAR file to the Tomcat directory
+                // We use sudo if jenkins user doesn't own the folder yet
+                sh "cp ${WORKSPACE}/target/*.war ${TOMCAT_PATH}/"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Successfully completed build for Kubebytes DevOps Project!"
+        }
+        failure {
+            echo "Pipeline failed. Please check the logs for errors in SonarQube or Trivy stages."
+        }
+    }
+}
