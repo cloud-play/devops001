@@ -1,0 +1,29 @@
+#! /bin/bash/
+
+sudo apt update
+sudo apt install openjdk-21-jdk -y
+
+sudo apt update
+sudo apt install maven -y
+
+sudo apt install git -y
+
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.117/bin/apache-tomcat-9.0.117.tar.gz
+
+echo "deb [trusted=yes] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list
+
+sudo apt update
+
+sudo apt install -y jenkins
+
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+sudo systemctl status jenkins
+
+java --version
+mvn --version
+git --version
+
+echo 'below is the Jenkins key'
+
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword

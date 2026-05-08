@@ -1,0 +1,49 @@
+Sonarqube Setup
+===============
+
+#!/bin/bash
+
+# =================================================================
+# Master Setup: Docker Engine + SonarQube
+# Target OS: Ubuntu (Jammy/Focal)
+# =================================================================
+
+echo "--- 1. Updating System Packages ---"
+sudo apt update && sudo apt upgrade -y
+
+echo "--- 2. Installing Docker Engine ---"
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Allow current user to run docker without sudo (takes effect after relog)
+sudo usermod -aG docker $USER
+
+echo "--- 3. Configuring Linux Kernel for SonarQube ---"
+# SonarQube/Elasticsearch requires high mmap counts
+sudo sysctl -w vm.max_map_count=262144
+echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
+
+echo "--- 4. Setting up SonarQube Container ---"
+# Create a dedicated network
+docker network create sonarnet || true
+
+# Run SonarQube Community Edition
+docker run -d --name sonarqube \
+    -p 9000:9000 \
+    --network sonarnet \
+    --restart always \
+    sonarqube:community
+
+echo "-------------------------------------------------------"
+echo "SETUP COMPLETE!"
+echo "-------------------------------------------------------"
+echo "1. Verify Docker:  docker ps"
+echo "2. IMPORTANT: You MUST log out and back in to use docker without sudo."
+echo "3. VIRTUALBOX USERS: Add Port Forwarding for 9000 in VM Settings."
+echo "4. Access: http://localhost:9000 (Wait 2 mins for startup)"
+echo "-------------------------------------------------------"
+
+
+
+chmod +x install_sonar.sh

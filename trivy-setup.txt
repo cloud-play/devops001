@@ -1,0 +1,20 @@
+# 1. Clean up old broken files
+sudo rm -f /etc/apt/sources.list.d/trivy.list /usr/share/keyrings/trivy.gpg
+
+# 2. Grab the latest version number
+VERSION=$(curl -sI https://github.com/aquasecurity/trivy/releases/latest | grep -i "location:" | awk -F "/" '{print $NF}' | tr -d '\r')
+
+# 3. Strip the 'v' for the filename (Bash method)
+VERSION_NUMBER=$(echo $VERSION | sed 's/v//')
+
+# 4. Download and Install
+wget "https://github.com/aquasecurity/trivy/releases/download/${VERSION}/trivy_${VERSION_NUMBER}_Linux-64bit.deb"
+sudo dpkg -i "trivy_${VERSION_NUMBER}_Linux-64bit.deb"
+
+# 5. Clean up and Verify
+rm "trivy_${VERSION_NUMBER}_Linux-64bit.deb"
+trivy --version
+
+
+
+chmod +x install_trivy.sh

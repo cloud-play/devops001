@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pmd xmlns="http://pmd.sourceforge.net/report/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pmd.sourceforge.net/report/2.0.0 http://pmd.sourceforge.net/report_2_0_0.xsd" version="6.55.0" timestamp="2026-05-09T01:33:01.326">
+<file name="C:\Users\sthit\OneDrive\Desktop\devops\devops-ci-cd-webapp\src\main\java\com\devops\project\App.java">
+<violation beginline="9" endline="9" begincolumn="20" endcolumn="30" rule="UnusedPrivateField" ruleset="Best Practices" package="com.devops.project" class="App" variable="secretToken" externalInfoUrl="https://pmd.github.io/pmd-6.55.0/pmd_rules_java_bestpractices.html#unusedprivatefield" priority="3">
+Avoid unused private fields such as 'secretToken'.
+</violation>
+</file>
+</pmd>

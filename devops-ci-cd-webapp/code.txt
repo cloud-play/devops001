@@ -1,0 +1,144 @@
+mvn archetype:generate -DgroupId=com.example -DartifactId=addressbook -DarchetypeArtifactId=maven-archetype-webapp -DinteractiveMode=false && mkdir -p addressbook/src/main/java/com/example && echo "package com.example; public class App { public static void main(String[] args) { System.out.println(\"Hello World\"); } }" > addressbook/src/main/java/com/example/App.java
+
+mkdir -p src/main/java/com/devops/project && echo "package com.devops.project; public class App { public String getStatus() { return \"DevOps is Awesome\"; } public static void main(String[] args) { System.out.println(new App().getStatus()); } }" > src/main/java/com/devops/project/App.java
+
+mkdir -p src/test/java/com/devops/project && echo "package com.devops.project; import org.junit.Test; import static org.junit.Assert.*; public class AppTest { @Test public void testStatus() { App myApp = new App(); assertEquals(\"DevOps is Awesome\", myApp.getStatus()); } }" > src/test/java/com/devops/project/AppTest.java
+
+
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <groupId>com.devops.project</groupId>
+  <artifactId>devops-ci-cd-webapp</artifactId>
+  <packaging>war</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>devops-ci-cd-webapp Maven Webapp</name>
+  <url>http://maven.apache.org</url>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>devops-ci-cd-webapp</finalName>
+    <plugins>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.11</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>3.21.2</version>
+        <configuration>
+          <linkXRef>false</linkXRef>
+          <format>html</format>
+          <sourceEncoding>utf-8</sourceEncoding>
+          <minimumTokens>100</minimumTokens>
+          <targetJdk>1.8</targetJdk>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>pmd</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>
+
+
+
+
+
+AppTest.java
+============
+package com.devops.project;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.List;
+
+public class AppTest {
+
+    @Test
+    public void testInstituteName() {
+        App app = new App();
+        assertEquals("Kubebytes DevOps Training Institute", app.getInstituteName());
+    }
+
+    @Test
+    public void testCourseListNotEmpty() {
+        App app = new App();
+        List<String> courses = app.getAvailableCourses();
+        assertFalse(courses.isEmpty());
+        assertTrue(courses.contains("DevOps Masterclass"));
+    }
+}
+
+App.java
+========
+package com.devops.project;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class App {
+    
+    // PMD will catch this: Unused private field
+    private String secretToken = "KB-12345"; 
+
+    public List<String> getAvailableCourses() {
+        List<String> courses = new ArrayList<>();
+        courses.add("DevOps Masterclass");
+        courses.add("Docker & Kubernetes");
+        courses.add("Jenkins CI/CD Pipelines");
+        courses.add("AWS Cloud Infrastructure");
+        return courses;
+    }
+
+    public String getInstituteName() {
+        return "Kubebytes DevOps Training Institute";
+    }
+
+    public static void main(String[] args) {
+        App kubebytes = new App();
+        System.out.println("Welcome to " + kubebytes.getInstituteName());
+        System.out.println("Our Courses: " + kubebytes.getAvailableCourses());
+    }
+}
