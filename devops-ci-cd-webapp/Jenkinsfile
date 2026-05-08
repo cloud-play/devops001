@@ -2,13 +2,15 @@ pipeline {
     agent any
 
     tools {
-        // Must match the name in Jenkins 'Global Tool Configuration'
+        // This must match the 'Name' you gave Maven in Manage Jenkins > Tools
         maven 'maven-3' 
     }
 
     environment {
-        // Change this path to the actual location you found on your VM
-        TOMCAT_PATH = '/opt/tomcat/webapps' 
+        // The directory where your Tomcat is installed
+        TOMCAT_PATH = '/opt/tomcat/webapps'
+        // The path to your project folder inside the GitHub repo
+        PROJECT_DIR = 'devops-ci-cd-webapp'
     }
 
     stages {
@@ -20,16 +22,15 @@ pipeline {
 
         stage('Compile & PMD') {
             steps {
-                // Runs the analysis and generates reports
-                sh 'mvn clean compile pmd:pmd'
+                // -f points Maven to the subfolder containing the pom.xml
+                sh "mvn -f ${PROJECT_DIR}/pom.xml clean compile pmd:pmd"
             }
         }
 
         stage('Trivy FS Scan') {
             steps {
-                // Scans the source code for vulnerabilities and saves a report
-                sh 'trivy fs . > trivy-fs-report.txt'
-                // Optional: display results in console
+                // Scans the specific project folder for vulnerabilities
+                sh "trivy fs ${PROJECT_DIR} > trivy-fs-report.txt"
                 sh 'cat trivy-fs-report.txt'
             }
         }
@@ -37,12 +38,12 @@ pipeline {
         stage('Unit Test & Coverage') {
             steps {
                 // 'verify' handles surefire tests and jacoco reports
-                sh 'mvn verify'
+                sh "mvn -f ${PROJECT_DIR}/pom.xml verify"
             }
             post {
                 always {
-                    // Publishes the test results to the Jenkins UI dashboard
-                    junit '**/target/surefire-reports/*.xml'
+                    // Publishes the test results to the Jenkins UI
+                    junit "**/target/surefire-reports/*.xml"
                 }
             }
         }
@@ -51,7 +52,7 @@ pipeline {
             steps {
                 // 'SonarQube-Server' must match the name in Manage Jenkins > System
                 withSonarQubeEnv('SonarQube-Server') {
-                    sh 'mvn sonar:sonar'
+                    sh "mvn -f ${PROJECT_DIR}/pom.xml sonar:sonar"
                 }
             }
         }
@@ -59,15 +60,15 @@ pipeline {
         stage('Package') {
             steps {
                 // Generate the .war file
-                sh 'mvn package -DskipTests'
+                sh "mvn -f ${PROJECT_DIR}/pom.xml package -DskipTests"
             }
         }
 
         stage('Deploy to Tomcat') {
             steps {
                 // Copies the generated WAR file to the Tomcat directory
-                // We use sudo if jenkins user doesn't own the folder yet
-                sh "cp ${WORKSPACE}/target/*.war ${TOMCAT_PATH}/"
+                // Note: We look inside the subfolder's target directory
+                sh "cp ${WORKSPACE}/${PROJECT_DIR}/target/*.war ${TOMCAT_PATH}/"
             }
         }
     }
@@ -77,7 +78,7 @@ pipeline {
             echo "Successfully completed build for Kubebytes DevOps Project!"
         }
         failure {
-            echo "Pipeline failed. Please check the logs for errors in SonarQube or Trivy stages."
+            echo "Pipeline failed. Check the logs for Maven tool errors or directory issues."
         }
     }
 }
