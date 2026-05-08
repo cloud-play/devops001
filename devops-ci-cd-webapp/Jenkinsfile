@@ -65,12 +65,11 @@ pipeline {
         }
 
         stage('Deploy to Tomcat') {
-            steps {
-                // Copies the generated WAR file to the Tomcat directory
-                // Note: We look inside the subfolder's target directory
-                sh "cp ${WORKSPACE}/${PROJECT_DIR}/target/*.war ${TOMCAT_PATH}/"
-            }
-        }
+    steps {
+        // This copies the WAR file to the location you just fixed
+        sh "cp ${WORKSPACE}/${PROJECT_DIR}/target/*.war /opt/tomcat/webapps/devops-app.war"
+    }
+}
     }
 
     post {
