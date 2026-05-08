@@ -56,6 +56,14 @@ pipeline {
                 }
             }
         }
+        stage("Quality Gate") {
+    steps {
+        timeout(time: 1, unit: 'HOURS') {
+            // This waits for SonarQube to finish processing and returns the status
+            waitForQualityGate abortPipeline: true
+        }
+    }
+}
 
         stage('Package') {
             steps {
