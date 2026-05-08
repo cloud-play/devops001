@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        // This must match the 'Name' you gave Maven in Manage Jenkins > Tools
-        maven 'maven-3' 
+        // Change this to match your Jenkins Tool Name
+        maven 'Maven_Home' 
     }
 
     environment {
