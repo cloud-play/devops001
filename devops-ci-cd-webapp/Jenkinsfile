@@ -2,14 +2,11 @@ pipeline {
     agent any
 
     tools {
-        // Change this to match your Jenkins Tool Name
         maven 'Maven_Home' 
     }
 
     environment {
-        // The directory where your Tomcat is installed
         TOMCAT_PATH = '/opt/tomcat/webapps'
-        // The path to your project folder inside the GitHub repo
         PROJECT_DIR = 'devops-ci-cd-webapp'
     }
 
@@ -22,14 +19,12 @@ pipeline {
 
         stage('Compile & PMD') {
             steps {
-                // -f points Maven to the subfolder containing the pom.xml
                 sh "mvn -f ${PROJECT_DIR}/pom.xml clean compile pmd:pmd"
             }
         }
 
         stage('Trivy FS Scan') {
             steps {
-                // Scans the specific project folder for vulnerabilities
                 sh "trivy fs ${PROJECT_DIR} > trivy-fs-report.txt"
                 sh 'cat trivy-fs-report.txt'
             }
@@ -37,12 +32,10 @@ pipeline {
 
         stage('Unit Test & Coverage') {
             steps {
-                // 'verify' handles surefire tests and jacoco reports
                 sh "mvn -f ${PROJECT_DIR}/pom.xml verify"
             }
             post {
                 always {
-                    // Publishes the test results to the Jenkins UI
                     junit "**/target/surefire-reports/*.xml"
                 }
             }
@@ -50,52 +43,52 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                // 'SonarQube-Server' must match the name in Manage Jenkins > System
                 withSonarQubeEnv('SonarQube-Server') {
                     sh "mvn -f ${PROJECT_DIR}/pom.xml sonar:sonar"
                 }
             }
         }
+
         stage("Quality Gate") {
-    steps {
-        timeout(time: 1, unit: 'HOURS') {
-            // This waits for SonarQube to finish processing and returns the status
-            waitForQualityGate abortPipeline: true
-        }
-    }
-}
-stage('Health Check') {
-    steps {
-        script {
-            // Wait 20 seconds for the app to start up inside the container
-            sleep 20 
-            
-            // Ping the actuator health endpoint
-            def response = sh(script: "curl -s http://<YOUR_CONTAINER_IP>:8080/actuator/health", returnStdout: true).trim()
-            
-            echo "Response from App: ${response}"
-            
-            if (response.contains('"status":"UP"')) {
-                echo "Application is HEALTHY! ✅"
-            } else {
-                error "Application is UNHEALTHY! ❌"
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
-    }
-}
+
         stage('Package') {
             steps {
-                // Generate the .war file
                 sh "mvn -f ${PROJECT_DIR}/pom.xml package -DskipTests"
             }
         }
 
         stage('Deploy to Tomcat') {
-    steps {
-        // This copies the WAR file to the location you just fixed
-        sh "cp ${WORKSPACE}/${PROJECT_DIR}/target/*.war /opt/tomcat/webapps/devops-app.war"
-    }
-}
+            steps {
+                // Using sudo as Jenkins user often lacks write access to /opt
+                sh "sudo cp ${WORKSPACE}/${PROJECT_DIR}/target/*.war ${TOMCAT_PATH}/devops-app.war"
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    echo "Waiting 30s for Tomcat to deploy..."
+                    sleep 30 
+                    
+                    // Note: URL includes the war name 'devops-app' as the context
+                    def response = sh(script: "curl -s http://localhost:8080/devops-app/actuator/health", returnStdout: true).trim()
+                    
+                    echo "Response from App: ${response}"
+                    
+                    if (response.contains('"status":"UP"')) {
+                        echo "Application is HEALTHY! ✅"
+                    } else {
+                        error "Application is UNHEALTHY! ❌"
+                    }
+                }
+            }
+        }
     }
 
     post {
@@ -103,7 +96,7 @@ stage('Health Check') {
             echo "Successfully completed build for Kubebytes DevOps Project!"
         }
         failure {
-            echo "Pipeline failed. Check the logs for Maven tool errors or directory issues."
+            echo "Pipeline failed. Check logs for specific errors."
         }
     }
 }
