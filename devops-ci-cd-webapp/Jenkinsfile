@@ -64,7 +64,25 @@ pipeline {
         }
     }
 }
-
+stage('Health Check') {
+    steps {
+        script {
+            // Wait 20 seconds for the app to start up inside the container
+            sleep 20 
+            
+            // Ping the actuator health endpoint
+            def response = sh(script: "curl -s http://<YOUR_CONTAINER_IP>:8080/actuator/health", returnStdout: true).trim()
+            
+            echo "Response from App: ${response}"
+            
+            if (response.contains('"status":"UP"')) {
+                echo "Application is HEALTHY! ✅"
+            } else {
+                error "Application is UNHEALTHY! ❌"
+            }
+        }
+    }
+}
         stage('Package') {
             steps {
                 // Generate the .war file
